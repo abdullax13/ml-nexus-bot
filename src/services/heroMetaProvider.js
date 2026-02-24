@@ -1,27 +1,57 @@
 const axios = require('axios');
 
+function hasValidBase(url) {
+  return typeof url === 'string' && url.trim().startsWith('http');
+}
+
 function base() {
-  return process.env.ML_HERO_API_BASE
-    ? process.env.ML_HERO_API_BASE.replace(/\/$/, '')
-    : null;
+  return process.env.ML_HERO_API_BASE;
 }
 
 async function getTopMeta({ role = 'all' } = {}) {
   const b = base();
-  if (!b) return { ok: false, reason: 'ML_HERO_API_BASE not set' };
 
-  // ملاحظة: المسارات تختلف حسب الـ API اللي بتختاره. هذا مثال عام.
-  // عدّل endpoints لاحقاً حسب مزودك.
-  const res = await axios.get(`${b}/meta/top`, { params: { role } });
-  return { ok: true, data: res.data };
+  // ✅ إذا غير مفعل → لا تحاول axios
+  if (!hasValidBase(b)) {
+    return { ok: false, reason: 'ML_HERO_API_BASE not set' };
+  }
+
+  try {
+    const url = `${b.replace(/\/$/, '')}/meta/top`;
+
+    const res = await axios.get(url, {
+      params: { role },
+      timeout: 10000,
+    });
+
+    return { ok: true, data: res.data };
+  } catch (error) {
+    console.error('[heroMetaProvider:getTopMeta]', error.message);
+    return { ok: false, reason: 'API error' };
+  }
 }
 
 async function getCounter(heroName) {
   const b = base();
-  if (!b) return { ok: false, reason: 'ML_HERO_API_BASE not set' };
 
-  const res = await axios.get(`${b}/hero/counter`, { params: { hero: heroName } });
-  return { ok: true, data: res.data };
+  // ✅ إذا غير مفعل → لا تحاول axios
+  if (!hasValidBase(b)) {
+    return { ok: false, reason: 'ML_HERO_API_BASE not set' };
+  }
+
+  try {
+    const url = `${b.replace(/\/$/, '')}/hero/counter`;
+
+    const res = await axios.get(url, {
+      params: { hero: heroName },
+      timeout: 10000,
+    });
+
+    return { ok: true, data: res.data };
+  } catch (error) {
+    console.error('[heroMetaProvider:getCounter]', error.message);
+    return { ok: false, reason: 'API error' };
+  }
 }
 
 module.exports = { getTopMeta, getCounter };
